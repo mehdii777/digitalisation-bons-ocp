@@ -1,31 +1,28 @@
+// CHEMIN : src/app/components/BonsTable.js
+
 'use client'
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Pencil, X, XCircle, FileDown, Eye, Plus   } from 'lucide-react';
+import { Pencil, X, XCircle, FileDown, Eye, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
+// ... (Le code pour ComboBox et MultiSelectComboBox ne change pas, donc je le cache pour la lisibilité)
+// ... (Collez tout votre code de ComboBox et MultiSelectComboBox ici)
 
 const ComboBox = ({ name, options, value, onChange, placeholder }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
-
-  // Add effect to sync with parent value changes
   useEffect(() => {
     setInputValue(value);
   }, [value]);
-
-  // Add null check before calling toLowerCase
   const filteredOptions = options.filter(option => 
     option && option.toLowerCase().includes((inputValue || '').toLowerCase())
   );
-
-  // Handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
-        
-        // If input doesn't match any option, reset to empty
         if (inputValue && !options.some(option => 
           option && option.toLowerCase() === inputValue.toLowerCase()
         )) {
@@ -34,31 +31,26 @@ const ComboBox = ({ name, options, value, onChange, placeholder }) => {
         }
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [inputValue, options, onChange, name]);
-
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange({ target: { name, value: newValue } });
     setIsOpen(true);
   };
-
   const handleSelectOption = (option) => {
     setInputValue(option);
     onChange({ target: { name, value: option } });
     setIsOpen(false);
   };
-
   const clearValue = () => {
     setInputValue('');
     onChange({ target: { name, value: '' } });
   };
-
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
@@ -96,25 +88,18 @@ const ComboBox = ({ name, options, value, onChange, placeholder }) => {
     </div>
   );
 };
-
 const MultiSelectComboBox = ({ name, options, value, onChange, placeholder }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedOptions, setSelectedOptions] = useState(value || []);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
-
-  // Add effect to sync with parent value changes
   useEffect(() => {
     setSelectedOptions(value || []);
   }, [value]);
-
-  // Add null check before calling toLowerCase
   const filteredOptions = options.filter(option => 
     option && option.toLowerCase().includes((inputValue || '').toLowerCase()) &&
     !selectedOptions.includes(option)
   );
-
-  // Handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -122,19 +107,16 @@ const MultiSelectComboBox = ({ name, options, value, onChange, placeholder }) =>
         setInputValue('');
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     setIsOpen(true);
   };
-
   const handleSelectOption = (option) => {
     const newSelectedOptions = [...selectedOptions, option];
     setSelectedOptions(newSelectedOptions);
@@ -142,18 +124,15 @@ const MultiSelectComboBox = ({ name, options, value, onChange, placeholder }) =>
     setInputValue('');
     setIsOpen(false);
   };
-
   const removeOption = (optionToRemove) => {
     const newSelectedOptions = selectedOptions.filter(option => option !== optionToRemove);
     setSelectedOptions(newSelectedOptions);
     onChange({ target: { name, value: newSelectedOptions } });
   };
-
   const clearAll = () => {
     setSelectedOptions([]);
     onChange({ target: { name, value: [] } });
   };
-
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
@@ -206,122 +185,71 @@ const MultiSelectComboBox = ({ name, options, value, onChange, placeholder }) =>
     </div>
   );
 };
-
-const BonsTable = ({ bons, clients, types, analyses }) => {
-  console.log("show: ", bons)
-
-  // const handleDelete = (id) => {
-
-  // }
+// MODIFICATION 1 : Accepter la nouvelle propriété `isPermanentPage`
+const BonsTable = ({ bons, clients, types, analyses, isPermanentPage = false }) => {
   const [filters, setFilters] = useState({
     num: '',
     client: '',
     typeBon: '',
     analyse: [],
     status: '',
-    validity: '',
+    validity: '', // Ce filtre ne sera plus visible sur la nouvelle page
     date: '',
   });
 
-  // Make sure props have default values to avoid null/undefined errors
   const safeClients = clients || [];
   const safeTypes = types || [];
-  // const safeQualities = qualities || [];
   const safeAnalyses = analyses || [];
   const safeBons = bons || [];
 
   const filteredBons = useMemo(() => {
+    // Le filtrage initial ne change pas, car il est fait sur la page parente.
+    // On garde cette logique pour que la page originale continue de fonctionner.
     return safeBons.filter((bon) => {
-      // Number filter
       if (filters.num && !bon.num?.toString().includes(filters.num)) return false;
-
-      // Client filter
-      if (filters.client && 
-          !bon.idClient?.identite?.toLowerCase().includes(filters.client.toLowerCase())) 
-        return false;
-
-      // Type Bon filter
-      if (filters.typeBon && 
-          !bon.typeBon?.typeBon?.toLowerCase().includes(filters.typeBon.toLowerCase())) 
-        return false;
-
-      // Qualité filter
-      // if (filters.qualite && 
-      //     !bon.qualite?.quality?.toLowerCase().includes(filters.qualite.toLowerCase())) 
-      //   return false;
-
-      // Analyses filter
+      if (filters.client && !bon.idClient?.identite?.toLowerCase().includes(filters.client.toLowerCase())) return false;
+      if (filters.typeBon && !bon.typeBon?.typeBon?.toLowerCase().includes(filters.typeBon.toLowerCase())) return false;
       if (filters.analyse.length > 0) {
-        // Check if ALL selected analyses exist in the bon's analyses
-        const matchAllAnalyses = filters.analyse.every(selectedAnalysis => 
-          bon.analyses?.some(analysis => 
-            analysis.analyse?.toLowerCase() === selectedAnalysis.toLowerCase()
-          )
-        );
+        const matchAllAnalyses = filters.analyse.every(selectedAnalysis => bon.analyses?.some(analysis => analysis.analyse?.toLowerCase() === selectedAnalysis.toLowerCase()));
         if (!matchAllAnalyses) return false;
       }
-
-      // Status filter
-      if (filters.status && bon.status !== filters.status) return false;
-
-      if (filters.validity && bon.validity !== filters.validity) return false;
-
-      // Date filter
+      // Les filtres pour status et validity ne s'appliqueront que sur la page originale
+      if (!isPermanentPage && filters.status && bon.status !== filters.status) return false;
+      if (!isPermanentPage && filters.validity && bon.validity !== filters.validity) return false;
       if (filters.date) {
         const bonDate = new Date(bon.date);
         const filterDate = new Date(filters.date);
         if (bonDate.toDateString() !== filterDate.toDateString()) return false;
       }
-
       return true;
     });
-  }, [safeBons, filters]);
+  }, [safeBons, filters, isPermanentPage]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const clearFilters = () => {
-    setFilters({
-      num: '',
-      client: '',
-      typeBon: '',
-      analyse: [],
-      status: '',
-      validity: '',
-      date: '',
-    });
+    setFilters({ num: '', client: '', typeBon: '', analyse: [], status: '', validity: '', date: '' });
   };
 
-  // Function to export data to Excel
   const exportToExcel = () => {
-    const dataToExport = filteredBons.map(bon => ({
+    // ... La fonction d'export reste la même
+     const dataToExport = filteredBons.map(bon => ({
       'Num': bon.num,
       'Client': bon.idClient?.identite || 'N/A',
       'Type Bon': bon.typeBon?.typeBon || 'N/A',
-      // 'Qualité': bon.qualite?.quality || 'N/A',
       'Details des travaux': bon.analyses?.map(analysis => analysis?.analyse).join(', ') || 'N/A',
       'Status': bon.status,
       'Validité': bon.validity || 'N/A',
       'Date': bon.date
     }));
-
-    // Create a new workbook and add a worksheet with data
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-    // Add the worksheet to the workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Bons');
-
-    // Generate a filename
     const date = new Date();
     const fileName = `bons_export_${date.toISOString().split('T')[0]}.xlsx`;
-
-    // Write the workbook and save as an Excel file
     XLSX.writeFile(workbook, fileName);
   };
 
@@ -329,8 +257,8 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
     <div className="m-3">
       {/* Filters Row */}
       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-  {/* Num input */}
-  <div className="flex space-x-2 items-center">
+        {/* ... (les filtres pour Num, Client, Type Bon, Analyses restent les mêmes) ... */}
+         <div className="flex space-x-2 items-center">
     <input
       type="text"
       name="num"
@@ -340,9 +268,7 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
       className="border rounded px-2 py-1 w-full"
     />
   </div>
-  
-  {/* Client dropdown with add button */}
-  <div className="flex space-x-2 items-center">
+   <div className="flex space-x-2 items-center">
     <div className="flex-grow">
       <ComboBox
         name="client"
@@ -358,9 +284,7 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
       </button>
     </Link>
   </div>
-  
-  {/* Type Bon dropdown with add button */}
-  <div className="flex space-x-2 items-center">
+   <div className="flex space-x-2 items-center">
     <div className="flex-grow">
       <ComboBox
         name="typeBon"
@@ -376,9 +300,7 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
       </button>
     </Link>
   </div>
-  
-  {/* Analyses multi-select with add button */}
-  <div className="flex space-x-2 items-center">
+   <div className="flex space-x-2 items-center">
     <div className="flex-grow">
       <MultiSelectComboBox
         name="analyse"
@@ -394,59 +316,36 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
       </button>
     </Link>
   </div>
-  
-  {/* Status dropdown */}
-  <select
-    name="status"
-    value={filters.status}
-    onChange={handleFilterChange}
-    className="border rounded px-2 py-1 w-full"
-  >
-    <option value="">Status</option>
-    <option value="traité">Traité</option>
-    <option value="en cours">En Cours</option>
-  </select>
-  
-  {/* Validity dropdown */}
-  <select
-    name="validity"
-    value={filters.validity}
-    onChange={handleFilterChange}
-    className="border rounded px-2 py-1 w-full"
-  >
-    <option value="">Permanent ou non</option>
-    <option value="permanent">permanent</option>
-    <option value="non permanent">non permanent</option>
-  </select>
-  
-  {/* Date input */}
-  <input
-    type="date"
-    name="date"
-    value={filters.date}
-    onChange={handleFilterChange}
-    className="border rounded px-2 py-1 w-full"
-  />
-  
-  {/* Action buttons */}
-  <div className="flex items-center space-x-2">
-    <button 
-      onClick={clearFilters}
-      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded flex items-center"
-    >
-      <X size={16} className="mr-1" /> Vider
-    </button>
-    
-    <button 
-      onClick={exportToExcel}
-      className="bg-[#287737] hover:bg-green-800 text-white px-3 py-1 rounded flex items-center"
-    >
-      <FileDown size={16} className="mr-1" /> Export
-    </button>
-  </div>
-</div>
+        
+        {/* MODIFICATION 2 : Cacher les filtres inutiles sur la page des bons permanents */}
+        {!isPermanentPage && (
+          <>
+            <select name="status" value={filters.status} onChange={handleFilterChange} className="border rounded px-2 py-1 w-full">
+              <option value="">Status</option>
+              <option value="traité">Traité</option>
+              <option value="en cours">En Cours</option>
+            </select>
+            
+            <select name="validity" value={filters.validity} onChange={handleFilterChange} className="border rounded px-2 py-1 w-full">
+              <option value="">Permanent ou non</option>
+              <option value="permanent">permanent</option>
+              <option value="non permanent">non permanent</option>
+            </select>
+          </>
+        )}
+        
+        <input type="date" name="date" value={filters.date} onChange={handleFilterChange} className="border rounded px-2 py-1 w-full"/>
+        
+        <div className="flex items-center space-x-2">
+          <button onClick={clearFilters} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded flex items-center">
+            <X size={16} className="mr-1" /> Vider
+          </button>
+          <button onClick={exportToExcel} className="bg-[#287737] hover:bg-green-800 text-white px-3 py-1 rounded flex items-center">
+            <FileDown size={16} className="mr-1" /> Export
+          </button>
+        </div>
+      </div>
 
-      {/* Table */}
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden">
           <thead className="bg-[#98ffa0]">
@@ -454,47 +353,66 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Num</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type Bon</th>
-              {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qualité</th> */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails des travaux</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validité</th>
+              
+              {/* MODIFICATION 3 : Cacher la colonne "Validité" qui n'est plus utile ici */}
+              {!isPermanentPage && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validité</th>
+              )}
 
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredBons.map((bon) => (
-              <tr key={bon._id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap">{bon.num}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{bon.idClient?.identite || 'N/A'}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{bon.typeBon?.typeBon || 'N/A'}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {bon.analyses?.map((analysis) => analysis?.analyse).join(', ') || 'N/A'}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs font-medium
-                    ${bon.status === 'traité' ? 'bg-green-100 text-green-800' : 
-                      bon.status === 'en cours' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-gray-100 text-gray-800'}
-                  `}>
-                    {bon.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs font-medium
-                    ${bon.validity === 'permanent' ? 'bg-green-100 text-green-800' : 
-                      bon.validity === 'non permanent' ? 'bg-red-100 text-red-800' : 
-                      'bg-gray-100 text-gray-800'}
-                  `}>
-                    {bon.validity || 'N/A'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">{bon.date}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <div className='flex gap-3 justify-center'>
+            {filteredBons.map((bon) => {
+              // MODIFICATION 4 : La logique de calcul du statut en fonction de la date
+              let statutTexte = bon.status;
+              let statutCouleur = bon.status === 'traité' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+
+              if (isPermanentPage) {
+                  const aujourdhui = new Date();
+                  const dateBon = new Date(bon.date);
+                  aujourdhui.setHours(0, 0, 0, 0);
+                  dateBon.setHours(0, 0, 0, 0);
+
+                  if (dateBon < aujourdhui) {
+                    statutTexte = 'Expiré';
+                    statutCouleur = 'bg-red-200 text-red-800';
+                  } else {
+                    statutTexte = 'Valide';
+                    statutCouleur = 'bg-green-200 text-green-800';
+                  }
+              }
+
+              return (
+                <tr key={bon._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">{bon.num}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{bon.idClient?.identite || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{bon.typeBon?.typeBon || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {bon.analyses?.map((analysis) => analysis?.analyse).join(', ') || 'N/A'}
+                  </td>
+                  {/* MODIFICATION 5 : Afficher le statut (calculé ou original) */}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statutCouleur}`}>
+                      {statutTexte}
+                    </span>
+                  </td>
+                  
+                  {/* MODIFICATION 6 : Cacher la cellule de validité sur la nouvelle page */}
+                  {!isPermanentPage && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${bon.validity === 'permanent' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {bon.validity || 'N/A'}
+                      </span>
+                    </td>
+                  )}
+
+                  <td className="px-4 py-3 whitespace-nowrap">{bon.date}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                     <div className='flex gap-3 justify-center'>
                   <div className="flex justify-center space-x-2">
                     <Link 
                       href={`/bons/edit/${bon._id}`} 
@@ -512,9 +430,10 @@ const BonsTable = ({ bons, clients, types, analyses }) => {
                     </Link>
                   </div>
                   </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         {filteredBons.length === 0 && (

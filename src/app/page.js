@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Beaker, ChevronRight, TestTube, Microscope, 
   FlaskConical, Dna, Atom, Syringe,
-  FlaskRound, Magnet, Biohazard
+  FlaskRound, Magnet, Biohazard, FilePlus, Archive
+
 } from 'lucide-react';
 
 const FloatingIcon = ({ icon: Icon, size, color, position, offset, className = '' }) => {
@@ -153,18 +154,41 @@ const Page = () => {
       </div>
   
       {/* Action button */}
-      <Link href="/bons" className="mt-4 sm:mt-6 md:mt-8">
-        <button 
-          className="font-semibold text-white text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 rounded-full bg-gradient-to-r from-green-800 via-green-600 to-green-700 shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-105"
-        >
-          <Beaker size={18} className="mr-2 animate-pulse" />
-          Voir Bons
-          <ChevronRight 
-            size={18} 
-            className="ml-2 transition-transform duration-300 group-hover:translate-x-2" 
-          />
-        </button>
-      </Link>
+           {/* Action buttons container */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4 sm:mt-6 md:mt-8">
+
+        {/* Bouton 1: Voir Bons */}
+        <Link href="/bons">
+          <button 
+            className="font-semibold text-white text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 rounded-full bg-gradient-to-r from-green-800 via-green-600 to-green-700 shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-105"
+          >
+            <Beaker size={18} className="mr-2 animate-pulse" />
+            Voir Bons
+            <ChevronRight 
+              size={18} 
+              className="ml-2 transition-transform duration-300 group-hover:translate-x-2" 
+            />
+          </button>
+        </Link>
+
+        {/* ================================== */}
+        {/* BOUTON MODIFIÉ : BONS PERMANENTS   */}
+        {/* ================================== */}
+        <Link href="/bons-permanents"> {/* Lien pour la nouvelle page */}
+          <button 
+            // MODIFIÉ : Les couleurs sont revenues en vert
+            className="font-semibold text-white text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 rounded-full bg-gradient-to-r from-green-800 via-green-600 to-green-700 shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-105"
+          >
+            <Archive size={18} className="mr-2" /> {/* MODIFIÉ : Nouvelle icône */}
+            Bons Permanents                      {/* MODIFIÉ : Nouveau texte */}
+            <ChevronRight 
+              size={18} 
+              className="ml-2 transition-transform duration-300 group-hover:translate-x-2" 
+            />
+          </button>
+        </Link>
+        
+      </div>
     </div>
   </div>
   );
